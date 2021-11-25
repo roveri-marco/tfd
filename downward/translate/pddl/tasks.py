@@ -45,7 +45,7 @@ class Task(object):
 
     assert domain_name == task_domain_name
     objects = constants + objects
-    init += [conditions.Atom("=", (conditions.parse_term(obj.name), conditions.parse_term(obj.name))) 
+    init += [conditions.Atom("=", (conditions.parse_term(obj.name), conditions.parse_term(obj.name)))
              for obj in objects]
     return Task(domain_name, task_name, requirements, types, objects,
                 predicates, init, goal, actions, durative_actions, axioms, Task.FUNCTION_SYMBOLS)
@@ -108,11 +108,11 @@ class DerivedFunctionAdministrator(object):
         for axiom in self.functions.values():
             axiom.dump(indent)
     def get_all_axioms(self):
-        return self.functions.values() 
+        return self.functions.values()
     def get_derived_function(self,exp):
         def get_default_variables(nr):
             return [conditions.Variable("?v%s" % varnr) for varnr in range(nr)]
-        def get_new_symbol(key):   
+        def get_new_symbol(key):
             # introduce new derived function symbol
             used_names = [axiom.name for axiom in self.functions.values()]
             for counter in itertools.count(1):
@@ -136,7 +136,7 @@ class DerivedFunctionAdministrator(object):
             args = subexp.args
             if key not in self.functions:
                 symbol = get_new_symbol(key)
-                default_args = get_default_variables(len(subexp.args)) 
+                default_args = get_default_variables(len(subexp.args))
                 subexp = f_expression.PrimitiveNumericExpression(subexp.symbol, default_args)
                 self.functions[key] = axioms.NumericAxiom(symbol, default_args, exp.op, [subexp])
         else:
@@ -154,18 +154,18 @@ class DerivedFunctionAdministrator(object):
                 if key not in self.functions:
                     symbol = get_new_symbol(key)
                     default_args = get_default_variables(len(args))
-                    pne1 = f_expression.PrimitiveNumericExpression(pne1.symbol, 
+                    pne1 = f_expression.PrimitiveNumericExpression(pne1.symbol,
                                                 default_args[:len(pne1.args)])
                     if pne2.args:
-                        pne2 = f_expression.PrimitiveNumericExpression(pne2.symbol, 
+                        pne2 = f_expression.PrimitiveNumericExpression(pne2.symbol,
                                                 default_args[-len(pne2.args):])
-                    
+
                     self.functions[key] = axioms.NumericAxiom(symbol, tuple(default_args),
-                                                              exp.op,[pne1,pne2]) 
+                                                              exp.op,[pne1,pne2])
         pne_symbol = self.functions[key].get_head().symbol
         return f_expression.PrimitiveNumericExpression(pne_symbol,args)
 
-def parse_domain_structure(entry,the_functions,the_axioms,the_actions,the_durative_actions, 
+def parse_domain_structure(entry,the_functions,the_axioms,the_actions,the_durative_actions,
                            the_types, the_predicates):
     if entry[0] == ":derived":
       axiom = axioms.Axiom.parse(entry)
@@ -174,7 +174,7 @@ def parse_domain_structure(entry,the_functions,the_axioms,the_actions,the_durati
       action = actions.DurativeAction.parse(entry)
       the_durative_actions.append(action)
     elif entry[0] == ":functions":
-      the_functions = pddl_types.parse_typed_list(entry[1:], 
+      the_functions = pddl_types.parse_typed_list(entry[1:],
         constructor=functions.Function.parse_typed, functions=True, types=the_types)
       for function in the_functions:
         Task.FUNCTION_SYMBOLS[function.name] = function.type
@@ -186,11 +186,12 @@ def parse_domain_structure(entry,the_functions,the_axioms,the_actions,the_durati
       action = actions.Action.parse(entry)
       the_actions.append(action)
     else:
+      print(entry)
       assert False, "unknown entity"
 
 def parse_domain(domain_pddl):
   iterator = iter(domain_pddl)
-  
+
   the_functions = []
   the_axioms = []
   the_actions = []
