@@ -1,7 +1,9 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: latin-1 -*-
 
 from __future__ import with_statement
+from __future__ import absolute_import
+from __future__ import print_function
 from collections import deque, defaultdict
 import itertools
 import time
@@ -19,7 +21,7 @@ class BalanceChecker(object):
                 action = self.add_inequality_preconds(action, reachable_action_params)
                 too_heavy_effects = [[],[]]
                 create_heavy_act = False
-            for time in xrange(2):
+            for time in range(2):
                 for eff in action.effects[time]:
                     if isinstance(eff.peffect, pddl.Atom):
                             predicate = eff.peffect.predicate
@@ -31,10 +33,10 @@ class BalanceChecker(object):
                             too_heavy_effects[time].append(eff.copy())
             if safe:
                 if create_heavy_act:
-                    heavy_act = pddl.DurativeAction(action.name, 
+                    heavy_act = pddl.DurativeAction(action.name,
                                                     action.parameters,
-                                                    action.duration, 
-                                                    action.condition, 
+                                                    action.duration,
+                                                    action.condition,
                                                     too_heavy_effects)
                     # heavy_act: duplicated universal effects and assigned unique
                     # names to all quantified variables (implicitly in constructor)
@@ -89,7 +91,7 @@ def get_fluents(task):
 
 def get_initial_invariants(task, safe):
     for predicate in get_fluents(task):
-        all_args = range(len(predicate.arguments))
+        all_args = list(range(len(predicate.arguments)))
         for omitted_arg in [-1] + all_args:
             order = [i for i in all_args if i != omitted_arg]
             part = invariants.InvariantPart(predicate.name, order, omitted_arg)
@@ -104,7 +106,7 @@ MAX_TIME = 300
 
 def find_invariants(task, safe, reachable_action_params):
     candidates = deque(get_initial_invariants(task, safe))
-    print len(candidates), "initial candidates"
+    print(len(candidates), "initial candidates")
     seen_candidates = set(candidates)
 
     balance_checker = BalanceChecker(task, reachable_action_params, safe)
@@ -114,11 +116,11 @@ def find_invariants(task, safe, reachable_action_params):
             candidates.append(invariant)
             seen_candidates.add(invariant)
 
-    start_time = time.clock()
+    start_time = time.process_time()
     while candidates:
         candidate = candidates.popleft()
-        if time.clock() - start_time > MAX_TIME:
-            print "Time limit reached, aborting invariant generation"
+        if time.process_time() - start_time > MAX_TIME:
+            print("Time limit reached, aborting invariant generation")
             return
         if candidate.check_balance(balance_checker, enqueue_func):
             yield candidate
@@ -153,12 +155,12 @@ def get_groups(task, safe=True, reachable_action_params=None):
 
 if __name__ == "__main__":
     import pddl
-    print "Parsing..."
-    task = pddl.open()
-    print "Finding invariants..."
+    print("Parsing...")
+    task = pddl.pddl_open()
+    print("Finding invariants...")
     for invariant in find_invariants(task):
-        print invariant
-    print "Finding fact groups..."
+        print(invariant)
+    print("Finding fact groups...")
     groups = get_groups(task)
     for group in groups:
-        print "[%s]" % ", ".join(map(str, group))
+        print("[%s]" % ", ".join(map(str, group)))

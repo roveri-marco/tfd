@@ -2,7 +2,8 @@
 # In the future, use explicitly relative imports or absolute
 # imports as a better solution.
 
-import conditions
+from __future__ import absolute_import
+from . import conditions
 
 import graph
 

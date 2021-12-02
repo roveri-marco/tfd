@@ -1,4 +1,5 @@
-import pddl_types
+from __future__ import absolute_import
+from . import pddl_types
 
 class Predicate(object):
     def __init__(self, name, arguments):

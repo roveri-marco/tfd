@@ -1,6 +1,7 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 import copy
 
 import pddl
@@ -644,6 +645,6 @@ def add_either_rules(type,rules):
       rules.append((rule_body, rule_head))
 
 if __name__ == "__main__":
-  task = pddl.open()
+  task = pddl.pddl_open()
   normalize(task)
   task.dump()

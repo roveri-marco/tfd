@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import pddl
 import sas_tasks
 
 from collections import defaultdict
 
 def handle_axioms(operators, durative_operators, axioms, goals):
-    print "Processing axioms..."
+    print("Processing axioms...")
 
     axioms_by_atom = get_axioms_by_atom(axioms)
 
@@ -33,7 +35,7 @@ def handle_axioms(operators, durative_operators, axioms, goals):
     # NOTE: compute_negative_axioms more or less invalidates axioms_by_atom.
     #       Careful with that axe, Eugene!
     axiom_layers = compute_axiom_layers(axioms, axiom_init)
-    print "Found", len(true_atoms), "axioms that are always true and", len(false_atoms), "that are always false"
+    print("Found", len(true_atoms), "axioms that are always true and", len(false_atoms), "that are always false")
     return axioms, list(axiom_init), axiom_layers, true_atoms, false_atoms
 
 def get_axioms_by_atom(axioms):
@@ -177,7 +179,7 @@ def simplify(axioms):
         if not axiom.condition: # empty condition: dominates everything
             return [axiom]
         literals = iter(axiom.condition)
-        dominated_axioms = axioms_by_literal[literals.next()]
+        dominated_axioms = axioms_by_literal[next(literals)]
         for literal in literals:
             dominated_axioms &= axioms_by_literal[literal]
         for dominated_axiom in dominated_axioms:

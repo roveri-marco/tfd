@@ -9,7 +9,7 @@ From: ubuntu:focal
     apt-get install --no-install-recommends -y \
  																						build-essential cmake g++ make python perl \
 																							bison flex ca-certificates git \
-																							python2
+																							python2 python3
     rm -rf /var/lib/apt/lists/*
 
 				# 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
@@ -30,17 +30,18 @@ From: ubuntu:focal
 %runscript
     ## The runscript is called whenever the container is used to solve
     ## an instance.
-				export tmpdir=/tmp/optic_$$
+				export tmpdir=/tmp/tfd_$$
 				export TFD_HOME=/planner/downward
 				mkdir -p ${tmpdir}
-				python2.7 $TFD_HOME/translate/translate.py $*
+				python3 $TFD_HOME/translate/translate.py $*
 				mv output.sas variables.groups all.groups ${tmpdir}
-				cd ${tmpdir}
+				pushd ${tmpdir}
 				$TFD_HOME/preprocess/preprocess < output.sas
 				#                       y Y                e r O 1 C 1 b
 				# ANYTIMEOPTS="a T 10 t 5"
 				$TFD_HOME/search/search y Y ${ANYTIMEOPTS} e r O 1 C 1 b p ./output_plan < output
 				cat output_plan*
+				popd
 				rm -rf ${tmpdir}
 
 ## Update the following fields with meta data about your submission.

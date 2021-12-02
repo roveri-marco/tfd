@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pddl
 
 def handle_axioms(axioms):
@@ -17,7 +18,7 @@ def identify_constants(axioms, axiom_by_pne):
                 axiom = axiom_by_pne[axiom]
             else:
                 return (False,None)
-        if (axiom.op == None and 
+        if (axiom.op == None and
            isinstance(axiom.parts[0],pddl.NumericConstant)):
             return (True,axiom.parts[0].value)
         else:
@@ -47,7 +48,7 @@ def identify_constants(axioms, axiom_by_pne):
                     return (True,new_val)
             else:
                 return (False,None)
-    
+
     constant_axioms = []
     for axiom in axioms:
         const, val = is_constant(axiom)
@@ -55,7 +56,7 @@ def identify_constants(axioms, axiom_by_pne):
             constant_axioms.append(axiom)
     return constant_axioms
 
-    
+
 def compute_axiom_layers(axioms, constant_axioms, axiom_by_pne):
 
     CONSTANT_OR_NO_AXIOM = -1
@@ -71,9 +72,9 @@ def compute_axiom_layers(axioms, constant_axioms, axiom_by_pne):
     def compute_layer(axiom):
         if isinstance(axiom, pddl.PrimitiveNumericExpression):
             axiom = axiom_by_pne.get(axiom, None)
-       
+
         layer = layers.get(axiom, CONSTANT_OR_NO_AXIOM)
-        
+
         if layer == UNKNOWN_LAYER:
             if axiom in constant_axioms:
                 layer = CONSTANT_OR_NO_AXIOM
@@ -94,9 +95,9 @@ def compute_axiom_layers(axioms, constant_axioms, axiom_by_pne):
     return layer_to_axioms, max_layer
 
 def identify_equivalent_axioms(axioms_by_layer, axiom_by_pne):
-    axiom_map = {} 
-    for layer, axioms in axioms_by_layer.iteritems():
-        axioms.sort(lambda x,y: cmp(str(x), str(y)))
+    axiom_map = {}
+    for layer, axioms in iter(axioms_by_layer.items()):
+        axioms.sort(key=lambda x: str(x))
         key_to_unique = {}
         for ax in axioms:
             mapped_args = []
@@ -111,6 +112,3 @@ def identify_equivalent_axioms(axioms_by_layer, axiom_by_pne):
             else:
                 key_to_unique[key] = ax
     return axiom_map
-        
-
-

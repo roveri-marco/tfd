@@ -1,11 +1,13 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: latin-1 -*-
 
+from __future__ import absolute_import
+from __future__ import print_function
 from collections import defaultdict
 
 import build_model
 import pddl_to_prolog
-import normalize #because of "get_function_predicate" 
+import normalize #because of "get_function_predicate"
 import pddl
 
 def get_fluent_facts(task, model):
@@ -14,11 +16,11 @@ def get_fluent_facts(task, model):
               if fact.predicate in fluent_predicates])
 
 def get_fluent_functions(model):
-    fluent_pnes = set()
-    for atom in model:
-        if isinstance(atom.predicate,pddl.PrimitiveNumericExpression):
-            fluent_pnes.add(pddl.PrimitiveNumericExpression(atom.predicate.symbol,atom.args))
-    return fluent_pnes
+  fluent_pnes = set()
+  for atom in model:
+    if isinstance(atom.predicate,pddl.PrimitiveNumericExpression):
+      fluent_pnes.add(pddl.PrimitiveNumericExpression(atom.predicate.symbol,atom.args))
+  return fluent_pnes
 
 def get_objects_by_type(typed_objects,types):
   type_dict = dict((type.name,type) for type in types)
@@ -30,7 +32,7 @@ def get_objects_by_type(typed_objects,types):
   return result
 
 def init_function_values(init_facts):
-  assignments = [func_assign for func_assign in init_facts 
+  assignments = [func_assign for func_assign in init_facts
                         if isinstance(func_assign, pddl.FunctionAssignment)]
   init_values = {}
   for assignment in assignments:
@@ -45,11 +47,11 @@ def instantiate(task, model):
   ## HACK: This is a not very clean way of initializing the previously
   ## added functions that store the duration of an action to a haphazardly value
   for atom in model:
-  	if isinstance(atom.predicate,str) and atom.predicate.startswith("defined!duration_"):
-		pne = pddl.PrimitiveNumericExpression(atom.predicate.replace("defined!","",1),atom.args)
-		value = pddl.NumericConstant(1.0)
-		init_assign = pddl.Assign(pne, value)
-		task.init.append(init_assign)
+    if isinstance(atom.predicate,str) and atom.predicate.startswith("defined!duration_"):
+      pne = pddl.PrimitiveNumericExpression(atom.predicate.replace("defined!","",1),atom.args)
+      value = pddl.NumericConstant(1.0)
+      init_assign = pddl.Assign(pne, value)
+      task.init.append(init_assign)
 
   init_facts = set(task.init) # TODO adapt
   init_function_vals = init_function_values(init_facts)
@@ -119,14 +121,14 @@ def instantiate(task, model):
       variable_mapping = dict([(pddl.Variable(par.name), arg)
                                for par, arg in zip(axiom.parameters, atom.args)])
       new_constant_numeric_axioms = set()
-      inst_axiom = axiom.instantiate(variable_mapping, fluent_functions, init_function_vals, 
+      inst_axiom = axiom.instantiate(variable_mapping, fluent_functions, init_function_vals,
                                      task, new_constant_numeric_axioms)
       instantiated_numeric_axioms.add(inst_axiom)
     elif atom.predicate == "@goal-reachable":
       relaxed_reachable = True
     instantiated_numeric_axioms |= new_constant_numeric_axioms
-      
-  return (relaxed_reachable, fluent_facts, fluent_functions, instantiated_actions, 
+
+  return (relaxed_reachable, fluent_facts, fluent_functions, instantiated_actions,
           instantiated_durative_actions, instantiated_axioms,
           instantiated_numeric_axioms, reachable_action_parameters)
 
@@ -138,34 +140,34 @@ def explore(task):
 if __name__ == "__main__":
   import pddl
 
-  task = pddl.open()
-  (relaxed_reachable, atoms, num_fluents, actions,durative_actions, 
+  task = pddl.pddl_open()
+  (relaxed_reachable, atoms, num_fluents, actions,durative_actions,
         axioms, num_axioms,
         reachable_action_params) = explore(task)
 
-  print "goal relaxed reachable: %s" % relaxed_reachable
-  print "%d atoms:" % len(atoms)
+  print("goal relaxed reachable: %s" % relaxed_reachable)
+  print("%d atoms:" % len(atoms))
   for atom in atoms:
-    print " ", atom
-  print
-  print "%d actions:" % len(actions)
+    print(" ", atom)
+  print()
+  print("%d actions:" % len(actions))
   for action in actions:
     action.dump()
-    print
-  print
-  print "%d durative actions:" % len(durative_actions)
+    print()
+  print()
+  print("%d durative actions:" % len(durative_actions))
   for action in durative_actions:
     action.dump()
-    print
-  print
-  print "%d axioms:" % len(axioms)
+    print()
+  print()
+  print("%d axioms:" % len(axioms))
   for axiom in axioms:
     axiom.dump()
-    print
-  print "%d numeric axioms:" % len(num_axioms)
+    print()
+  print("%d numeric axioms:" % len(num_axioms))
   for axiom in num_axioms:
     axiom.dump()
-    print
-  print "%d reachable_action_params:" % len(reachable_action_params)
+    print()
+  print("%d reachable_action_params:" % len(reachable_action_params))
   for rap in reachable_action_params:
-      print rap
+      print(rap)

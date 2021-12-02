@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sys
 
 import pddl
@@ -29,24 +30,28 @@ class CostMatrix(object):
     self.cost_matrix = []
     for joinee in joinees:
       self.add_entry(joinee)
+
   def add_entry(self, joinee):
     new_row = [self.compute_join_cost(joinee, other) for other in self.joinees]
     self.cost_matrix.append(new_row)
     self.joinees.append(joinee)
+
   def delete_entry(self, index):
     for row in self.cost_matrix[index + 1:]:
       del row[index]
     del self.cost_matrix[index]
     del self.joinees[index]
+
   def find_min_pair(self):
     assert len(self.joinees) >= 2
-    min_cost = (sys.maxint, sys.maxint)
+    min_cost = (sys.maxsize, sys.maxsize)
     for i, row in enumerate(self.cost_matrix):
       for j, entry in enumerate(row):
         if entry < min_cost:
           min_cost = entry
           left_index, right_index = i, j
     return left_index, right_index
+
   def remove_min_pair(self):
     left_index, right_index = self.find_min_pair()
     left, right = self.joinees[left_index], self.joinees[right_index]
@@ -54,6 +59,7 @@ class CostMatrix(object):
     self.delete_entry(left_index)
     self.delete_entry(right_index)
     return (left, right)
+
   def compute_join_cost(self, left_joinee, right_joinee):
     left_vars = pddl_to_prolog.get_variables([left_joinee])
     right_vars = pddl_to_prolog.get_variables([right_joinee])
@@ -63,7 +69,11 @@ class CostMatrix(object):
     return (len(left_vars) - len(common_vars),
             len(right_vars) - len(common_vars),
             -len(common_vars))
+
   def __nonzero__(self):
+    return len(self.joinees) >= 2
+
+  def __bool__(self):
     return len(self.joinees) >= 2
 
 class ResultList(object):
@@ -75,7 +85,7 @@ class ResultList(object):
     self.result[-1].effect = self.final_effect
     return self.result
   def add_rule(self, type, conditions, effect_vars):
-    effect = pddl.Atom(self.name_generator.next(), effect_vars)
+    effect = pddl.Atom(next(self.name_generator), effect_vars)
     rule = pddl_to_prolog.Rule(conditions, effect)
     rule.type = type
     self.result.append(rule)
@@ -86,7 +96,7 @@ def greedy_join(rule, name_generator):
   cost_matrix = CostMatrix(rule.conditions)
   occurrences = OccurrencesTracker(rule)
   result = ResultList(rule, name_generator)
-  
+
   while cost_matrix:
     joinees = list(cost_matrix.remove_min_pair())
     for joinee in joinees:

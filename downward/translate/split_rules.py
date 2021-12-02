@@ -2,6 +2,7 @@
 # components" (where to conditions are related if they share a variabe) into
 # several rules, one for each connected component and one high-level rule.
 
+from __future__ import absolute_import
 import copy
 
 from pddl_to_prolog import Rule, get_variables
@@ -19,13 +20,13 @@ def get_connected_conditions(conditions):
         var_to_conditions[var].append(cond)
 
   # Connect conditions with a common variable
-  for var, conds in var_to_conditions.iteritems():
+  for var, conds in iter(var_to_conditions.items()):
     for cond in conds[1:]:
       agraph.connect(conds[0], cond)
   return agraph.connected_components()
 
 def project_rule(rule, conditions, name_generator):
-  predicate = name_generator.next()
+  predicate = next(name_generator)
   effect_variables = set(rule.effect.args) & get_variables(conditions)
   effect = pddl.Atom(predicate, list(effect_variables))
   projected_rule = Rule(conditions, effect)
@@ -39,7 +40,7 @@ def split_rule(rule, name_generator):
         important_conditions.append(cond)
         break
     else:
-      trivial_conditions.append(cond)
+        trivial_conditions.append(cond)
 
   # important_conditions = [cond for cond in rule.conditions if cond.args]
   # trivial_conditions = [cond for cond in rule.conditions if not cond.args]

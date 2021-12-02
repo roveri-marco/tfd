@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import cStringIO
 import textwrap
 
@@ -48,4 +50,4 @@ def print_nested_list(nested_list):
       pendingspace = True
 
   for line in wrap_lines(stream.getvalue().splitlines()):
-    print line
+    print(line)

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 from collections import defaultdict
 import itertools
-
+import operator
 import constraints
 import pddl
 import tools
@@ -23,11 +24,11 @@ def invert_list(alist):
 
 
 def instantiate_factored_mapping(pairs):
-    part_mappings = [[zip(preimg, perm_img) for perm_img in tools.permutations(img)]
+    part_mappings = [[list(zip(preimg, perm_img)) for perm_img in tools.permutations(img)]
                      for (preimg, img) in pairs]
     return tools.cartesian_product(part_mappings)
 
-                
+
 def find_unique_variables(action, invariant):
     # find unique names for invariant variables
     params = set([p.name for p in action.parameters])
@@ -37,9 +38,9 @@ def find_unique_variables(action, invariant):
         params.update([p.name for p in eff.parameters])
     inv_vars = []
     counter = itertools.count()
-    for _ in xrange(invariant.arity()):
+    for _ in range(invariant.arity()):
         while True:
-            new_name = "?v%i" % counter.next()
+            new_name = "?v%i" % next(counter)
             if new_name not in params:
                 inv_vars.append(pddl.Variable(new_name))
                 break
@@ -57,7 +58,7 @@ def get_literals(condition):
 
 def ensure_conjunction_sat(system, *parts):
     """Modifies the constraint system such that it is only solvable if the
-       conjunction of all parts is satisfiable. 
+       conjunction of all parts is satisfiable.
 
        Each part must be an iterator, generator, or an iterable over
        literals."""
@@ -77,11 +78,11 @@ def ensure_conjunction_sat(system, *parts):
             else:
                 pos[literal.predicate].add(literal)
 
-    for pred, posatoms in pos.iteritems():
+    for pred, posatoms in iter(pos.items()):
         if pred in neg:
             for posatom in posatoms:
                 for negatom in neg[pred]:
-                    parts = zip(negatom.args, posatom.args)
+                    parts = list(zip(negatom.args, posatom.args))
                     if parts:
                         negative_clause = constraints.NegativeClause(parts)
                         system.add_negative_clause(negative_clause)
@@ -100,7 +101,7 @@ def ensure_inequality(system, literal1, literal2):
        the other is not)"""
     if (literal1.predicate == literal2.predicate and
         literal1.parts):
-        parts = zip(literal1.parts, literal2.parts)
+        parts = list(zip(literal1.parts, literal2.parts))
         system.add_negative_clause(constraints.NegativeClause(parts))
 
 
@@ -131,8 +132,8 @@ class InvariantPart:
         return len(self.order)
 
     def get_assignment(self, parameters, literal):
-        equalities = [(arg, literal.args[argpos]) 
-                      for arg, argpos in zip(parameters, self.order)] 
+        equalities = [(arg, literal.args[argpos])
+                      for arg, argpos in zip(parameters, self.order)]
         return constraints.Assignment(equalities)
 
     def get_parameters(self, literal):
@@ -153,7 +154,7 @@ class InvariantPart:
         other_arg_to_pos = invert_list(other_literal.args)
         factored_mapping = []
 
-        for key, other_positions in other_arg_to_pos.iteritems():
+        for key, other_positions in iter(other_arg_to_pos.items()):
             own_positions = arg_to_ordered_pos.get(key, [])
             len_diff = len(own_positions) - len(other_positions)
             if len_diff >= 1 or len_diff <= -2 or len_diff == -1 and not allowed_omissions:
@@ -194,21 +195,24 @@ class Invariant(object):
         self.predicates = set([part.predicate for part in parts])
         self.predicate_to_part = dict([(part.predicate, part) for part in parts])
         assert len(self.parts) == len(self.predicates)
-    
+
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.parts == other.parts
-    
+
     def __ne__(self, other):
         return self.__class__ != other.__class__ or self.parts != other.parts
-    
+
     def __hash__(self):
         return hash(self.parts)
+
+    def __lt__(self,other):
+        return operator.lt(str(self),str(other))
 
     def __str__(self):
         return "{%s}" % ", ".join(map(str, self.parts))
 
     def arity(self):
-        return iter(self.parts).next().arity()
+        return next(iter(self.parts)).arity()
 
     def get_parameters(self, atom):
         return self.predicate_to_part[atom.predicate].get_parameters(atom)
@@ -261,22 +265,22 @@ class SafeInvariant(Invariant):
 
     def operator_too_heavy(self, h_action):
         inv_vars = find_unique_variables(h_action, self)
-        for time in xrange(2):
+        for time in range(2):
             cond_time = 2 * time
-            add_effects = [eff for eff in h_action.effects[time] 
-                           if isinstance(eff.peffect, pddl.Literal) and 
+            add_effects = [eff for eff in h_action.effects[time]
+                           if isinstance(eff.peffect, pddl.Literal) and
                               not eff.peffect.negated and
                               self.predicate_to_part.get(eff.peffect.predicate)]
-          
+
             if len(add_effects) <= 1:
                 continue
-                
+
             for eff1, eff2 in itertools.combinations(add_effects, 2):
                 system = constraints.ConstraintSystem()
                 ensure_inequality(system, eff1.peffect, eff2.peffect)
                 ensure_cover(system, eff1.peffect, self, inv_vars)
                 ensure_cover(system, eff2.peffect, self, inv_vars)
-                ensure_conjunction_sat(system, 
+                ensure_conjunction_sat(system,
                                        get_literals(h_action.condition[cond_time]),
                                        get_literals(eff1.condition[cond_time]),
                                        get_literals(eff2.condition[cond_time]),
@@ -285,21 +289,21 @@ class SafeInvariant(Invariant):
                 if system.is_solvable():
                     return True
         return False
-            
+
     def operator_unbalanced(self, action, temp_unbalanced_actions):
         inv_vars = find_unique_variables(action, self)
         relevant_effs = [[],[]]
         add_effects = [[],[]]
         del_effects = [[],[]]
-        for time in xrange(2):
-            relevant_effs[time] = [eff for eff in action.effects[time] 
+        for time in range(2):
+            relevant_effs[time] = [eff for eff in action.effects[time]
                                    if isinstance(eff.peffect, pddl.Literal) and
                                    self.predicate_to_part.get(eff.peffect.predicate)]
             add_effects[time] = [eff for eff in relevant_effs[time]
                                  if not eff.peffect.negated]
             del_effects[time] = [eff for eff in relevant_effs[time]
                                  if eff.peffect.negated]
-        for time in xrange(2):
+        for time in range(2):
             poss_temporary_cand = ((time == 1) and not len(add_effects[0]))
             for eff in add_effects[time]:
                 unbal, new_candidates = self.add_effect_unbalanced(action,
@@ -320,12 +324,12 @@ class SafeInvariant(Invariant):
                         new_candidates = tuple(new_candidates)
                         temp_unbalanced_actions.add((action, eff,
                                                     new_candidates))
-                    
+
         return False, None
 
     def minimal_covering_renamings(self, action, add_effect, inv_vars):
         """computes the minimal renamings of the action parameters such
-           that the add effect is covered by the action. 
+           that the add effect is covered by the action.
            Each renaming is an constraint system"""
 
         # add_effect must be covered
@@ -346,13 +350,13 @@ class SafeInvariant(Invariant):
                         system.add_negative_clause(negative_clause)
             minimal_renamings.append(system)
         return minimal_renamings
-    
-    def add_effect_unbalanced(self, action, add_effect, del_effects, 
+
+    def add_effect_unbalanced(self, action, add_effect, del_effects,
                               inv_vars, time):
         cond_time = 2 * time
         minimal_renamings = self.minimal_covering_renamings(action, add_effect,
                                                             inv_vars)
-       
+
         lhs_by_pred = defaultdict(list)
         for lit in itertools.chain(get_literals(action.condition[cond_time]),
                                    get_literals(add_effect.condition[cond_time]),
@@ -360,7 +364,7 @@ class SafeInvariant(Invariant):
             lhs_by_pred[lit.predicate].append(lit)
 
         for del_effect in del_effects:
-            if (time == 1 and 
+            if (time == 1 and
                 (del_effect.condition[0] or del_effect.condition[1])):
                continue
             minimal_renamings = self.unbalanced_renamings(del_effect, add_effect,
@@ -370,13 +374,13 @@ class SafeInvariant(Invariant):
 
         # Otherwise, the balance check fails => Generate new candidates.
         return True, self.refine_candidate(add_effect, action, 0)
-        
+
     def add_effect_temporarily_unbalanced(self, action, add_effect, start_del_effects, inv_vars):
         """at-end add effect has corresponding at-start del effect, so it could
         be balanced if no other action interferes"""
         minimal_renamings = self.minimal_covering_renamings(action, add_effect,
                                                             inv_vars)
-       
+
         lhs_by_pred = defaultdict(list)
         for lit in itertools.chain(get_literals(action.condition[0]),
                                    get_literals(add_effect.condition[0]),
@@ -397,11 +401,11 @@ class SafeInvariant(Invariant):
            action and adds the refined one to the queue"""
         new_candidates = []
         part = self.predicate_to_part[add_effect.peffect.predicate]
-        for del_eff in [eff for eff in action.effects[time] 
-                        if isinstance(eff.peffect, pddl.Literal) and 
+        for del_eff in [eff for eff in action.effects[time]
+                        if isinstance(eff.peffect, pddl.Literal) and
                         eff.peffect.negated]:
             if del_eff.peffect.predicate not in self.predicate_to_part:
-                for match in part.possible_matches(add_effect.peffect, 
+                for match in part.possible_matches(add_effect.peffect,
                                                    del_eff.peffect):
                     new_candidates.append(SafeInvariant(self.parts.union((match,))))
         return new_candidates
@@ -412,7 +416,7 @@ class SafeInvariant(Invariant):
            the start_del_effect does not balance the end_add_effect."""
         system = constraints.ConstraintSystem()
         ensure_cover(system, del_effect.peffect, self, inv_vars)
-       
+
         still_unbalanced = []
         for renaming in unbalanced_renamings:
             new_sys = system.combine(renaming)
@@ -434,7 +438,7 @@ class SafeInvariant(Invariant):
         system = constraints.ConstraintSystem()
         ensure_inequality(system, add_effect.peffect, del_effect.peffect)
         ensure_cover(system, del_effect.peffect, self, inv_vars)
-       
+
         still_unbalanced = []
         for renaming in unbalanced_renamings:
             new_sys = system.combine(renaming)
@@ -468,7 +472,7 @@ class SafeInvariant(Invariant):
                 if match.negated != literal.negated:
                     continue
                 else:
-                    a = constraints.Assignment(zip(literal.args, match.args))
+                    a = constraints.Assignment(list(zip(literal.args, match.args)))
                     poss_assignments.append(a)
             if not poss_assignments:
                 return None
@@ -565,9 +569,9 @@ class UnsafeInvariant(Invariant):
               check_all_del_effects = False
               break
           if check_all_del_effects:
-            found_start_del = self.find_matching_del_effect(part, eff, start_del_effects, 
+            found_start_del = self.find_matching_del_effect(part, eff, start_del_effects,
                                                             enqueue_func, False)
-          found_end_del = self.find_matching_del_effect(part, eff, end_del_effects, 
+          found_end_del = self.find_matching_del_effect(part, eff, end_del_effects,
                                                             enqueue_func, False)
           if not (found_start_del or found_end_del):
             if not found_end_del:
@@ -594,4 +598,3 @@ class UnsafeInvariant(Invariant):
       if del_eff.peffect.predicate not in self.predicate_to_part:
         for match in part.possible_matches(add_effect.peffect, del_eff.peffect):
           enqueue_func(UnsafeInvariant(self.parts.union((match,))))
-
