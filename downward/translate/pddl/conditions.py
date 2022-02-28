@@ -1,8 +1,8 @@
 import itertools
 
-import pddl_types
-import f_expression
-import tasks
+from . import pddl_types
+from . import f_expression
+from . import tasks
 
 def parse_condition(alist):
     condition = parse_condition_aux(alist, False)
@@ -27,8 +27,8 @@ def parse_condition_aux(alist, negated):
             assert len(args) == 1
             return parse_condition_aux(args[0], not negated)
     elif tag in ("forall", "exists"):
-        import __builtin__
-        __builtin__.containsQuantifiedConditions = True
+        import builtins
+        builtins.containsQuantifiedConditions = True
         parameters = pddl_types.parse_typed_list(alist[1])
         args = alist[2:]
         assert len(args) == 1
@@ -105,7 +105,7 @@ def is_function_comparison(alist):
         if symbol[0] in ("+","/","*","-"):
             return True
         symbol = symbol[0]
-    if (tasks.Task.FUNCTION_SYMBOLS.get(symbol,"object")=="number" or 
+    if (tasks.Task.FUNCTION_SYMBOLS.get(symbol,"object")=="number" or
         symbol.replace(".","").isdigit()):
         return True
     return False
@@ -127,17 +127,17 @@ def parse_term(term):
         return FunctionTerm(term,[])
     else:
         return ObjectTerm(term)
-        
+
 def dump_temporal_condition(condition,indent="  "):
     assert len(condition)==3
     if not isinstance(condition[0],Truth):
-        print "%sat start:" % indent
+        print("%sat start:" % indent)
         condition[0].dump(indent+"  ")
     if not isinstance(condition[1],Truth):
-        print "%sover all:" % indent
+        print("%sover all:" % indent)
         condition[1].dump(indent+"  ")
     if not isinstance(condition[2],Truth):
-        print "%sat end:" % indent
+        print("%sat end:" % indent)
         condition[2].dump(indent+"  ")
 
 
@@ -156,14 +156,14 @@ class Condition(object):
     def __ne__(self, other):
         return not self == other
     def dump(self, indent="  "):
-        print "%s%s" % (indent, self._dump())
+        print("%s%s" % (indent, self._dump()))
         for part in self.parts:
             part.dump(indent + "  ")
     def _dump(self):
         return self.__class__.__name__
     def _postorder_visit(self, method_name, *args):
         part_results = [part._postorder_visit(method_name, *args)
-                        for part in self.parts] 
+                        for part in self.parts]
         method = getattr(self, method_name, self._propagate)
         return method(part_results, *args)
     def _propagate(self, parts, *args):
@@ -217,6 +217,8 @@ class ConstantCondition(Condition):
         return self
     def __eq__(self, other):
         return self.__class__ is other.__class__
+    def __hash__(self):
+        return self.hash
 
 class Impossible(Exception):
     pass
@@ -243,6 +245,8 @@ class JunctorCondition(Condition):
         return (self.hash == other.hash and
                 self.__class__ is other.__class__ and
                 self.parts == other.parts)
+    def __hash__(self):
+        return self.hash
     def change_parts(self, parts):
         return self.__class__(parts)
 
@@ -306,6 +310,8 @@ class QuantifiedCondition(Condition):
                 self.__class__ is other.__class__ and
                 self.parameters == other.parameters and
                 self.parts == other.parts)
+    def __hash__(self):
+        return self.hash
     def _dump(self, indent="  "):
         arglist = ", ".join(map(str, self.parameters))
         return "%s %s" % (self.__class__.__name__, arglist)
@@ -362,6 +368,8 @@ class Literal(Condition):
                 self.__class__ is other.__class__ and
                 self.predicate == other.predicate and
                 self.args == other.args)
+    def __hash__(self):
+        return self.hash
     def __init__(self, predicate, args):
         self.predicate = predicate
         self.args = tuple(args)
@@ -370,7 +378,7 @@ class Literal(Condition):
         return "%s %s(%s)" % (self.__class__.__name__, self.predicate,
                               ", ".join(map(str, self.args)))
     def dump(self, indent="  "):
-        print "%s%s %s" % (indent, self._dump(), self.predicate)
+        print("%s%s %s" % (indent, self._dump(), self.predicate))
         for arg in self.args:
             arg.dump(indent + "  ")
     def change_parts(self, parts):
@@ -443,6 +451,8 @@ class FunctionComparison(Condition): # comparing numerical functions
                 self.__class__ is other.__class__ and
                 self.comparator == other.comparator and
                 self.parts == other.parts)
+    def __hash__(self):
+        return self.hash
     def __str__(self):
         return "%s (%s %s)" % (self.__class__.__name__, self.comparator,
                               ", ".join(map(str, self.parts)))
@@ -466,15 +476,15 @@ class FunctionComparison(Condition): # comparing numerical functions
         return result
     def instantiate(self, var_mapping, init_facts, fluent_facts, init_function_vals,
                     fluent_functions, task, new_axiom, result):
-        instantiated_parts = [part.instantiate(var_mapping, fluent_functions, 
-                                               init_function_vals, task, new_axiom) 
+        instantiated_parts = [part.instantiate(var_mapping, fluent_functions,
+                                               init_function_vals, task, new_axiom)
                                                for part in self.parts]
         #TODO: future work: eliminate non-fluent functions
         result.append(self.__class__(self.comparator,instantiated_parts))
     def positive(self):
         return self
-        
-    
+
+
 class NegatedFunctionComparison(FunctionComparison):
     negated = True
     def negate(self):
@@ -482,8 +492,9 @@ class NegatedFunctionComparison(FunctionComparison):
     positive = negate
 
 class Term(object):
+    __hash__ = object.__hash__
     def dump(self, indent="  "):
-        print "%s%s %s" % (indent, self._dump(), self.name)
+        print("%s%s %s" % (indent, self._dump(), self.name))
         for arg in self.args:
             arg.dump(indent + "  ")
     def _dump(self):
@@ -525,7 +536,7 @@ class FunctionTerm(Term):
                 typed_vars += typed
                 conjunction_parts += parts
                 new_args.append(new_term)
-    
+
         for counter in itertools.count(1):
             new_var_name = "?v" + str(counter)
             if new_var_name not in used_variables:
@@ -540,9 +551,9 @@ class FunctionTerm(Term):
             atom = Atom(pred_name,new_args)
             conjunction_parts = [atom] + conjunction_parts
         else:
-            conjunction_parts = [self] 
+            conjunction_parts = [self]
         return (typed_vars, conjunction_parts, new_var)
-    
+
 class Variable(Term):
     args = []
     def __init__(self, name):
@@ -551,6 +562,14 @@ class Variable(Term):
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
                 self.name == other.name)
+    def __lt__(self, other):
+        return self.name < other.name
+    def __le__(self, other):
+        return self.name <= other.name
+    def __gt__(self, other):
+        return self.name > other.name
+    def __ge__(self, other):
+        return self.name >= other.name
     def __cmp__(self,other):
         return cmp(self.name,other.name)
     def __hash__(self):
@@ -585,4 +604,3 @@ class ObjectTerm(Term):
 
 def function_predicate_name(functionname):
     return "%s!val" % functionname
-

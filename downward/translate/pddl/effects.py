@@ -1,7 +1,7 @@
-import conditions
-import tasks
-import f_expression
-import pddl_types
+from . import conditions
+from . import tasks
+from . import f_expression
+from . import pddl_types
 
 def cartesian_product(*sequences):
   # TODO: Also exists in tools.py outside the pddl package (defined slightly
@@ -43,7 +43,7 @@ def add_effect(tmp_effect, results, durative = False):
         tmp_effect = tmp_effect.effects[0]
     if durative:
         condition = [conditions.Truth(),conditions.Truth(),conditions.Truth()]
-    else: 
+    else:
         condition = conditions.Truth()
     if isinstance(tmp_effect, ConditionalEffect):
         condition = tmp_effect.condition
@@ -112,8 +112,9 @@ def parse_cond_effect(alist, durative=False):
             return ConjunctiveEffect([ObjectFunctionAssignment(conditions.parse_term(alist[1]),conditions.parse_term(alist[2]))])
     else:
         return ConjunctiveEffect([conditions.parse_condition(alist)])
-    
+
 class Effect(object):
+  __hash__ = object.__hash__
   def __init__(self, parameters, condition, peffect):
     self.parameters = parameters
     self.condition = condition
@@ -126,17 +127,17 @@ class Effect(object):
   def dump(self):
     indent = "  "
     if self.parameters:
-      print "%sforall %s" % (indent, ", ".join(map(str, self.parameters)))
+      print("%sforall %s" % (indent, ", ".join(map(str, self.parameters))))
       indent += "  "
-    if ((isinstance(self.condition,list) and 
+    if ((isinstance(self.condition,list) and
         self.condition != [conditions.Truth(),conditions.Truth(),conditions.Truth()])
        or (not isinstance(self.condition,list) and self.condition != conditions.Truth())):
-      print "%sif" % indent
+      print("%sif" % indent)
       if isinstance(self.condition,list):
         conditions.dump_temporal_condition(self.condition,indent + "  ")
       else:
         self.condition.dump(indent + "  ")
-      print "%sthen" % indent
+      print("%sthen" % indent)
       indent += "  "
     self.peffect.dump(indent)
   def copy(self):
@@ -146,7 +147,7 @@ class Effect(object):
     self.parameters = [par.uniquify_name(type_map, renamings)
                        for par in self.parameters]
     if isinstance(self.condition,list):
-        self.condition = [cond.uniquify_variables(type_map, renamings) for 
+        self.condition = [cond.uniquify_variables(type_map, renamings) for
                             cond in self.condition]
     else:
         self.condition = self.condition.uniquify_variables(type_map, renamings)
@@ -183,7 +184,7 @@ class Effect(object):
         except conditions.Impossible:
           return
     effects = []
-    self.peffect.instantiate(var_mapping, init_facts, fluent_facts, 
+    self.peffect.instantiate(var_mapping, init_facts, fluent_facts,
                              init_function_vals, fluent_functions, task,
                              new_axiom, effects)
     assert len(effects) <= 1
@@ -209,9 +210,9 @@ class TmpEffect(object):
         self.time = time
     def dump(self, indent="  "):
         if self.time:
-            print "%sat %s:" %(indent,self.time)
+            print("%sat %s:" %(indent,self.time))
             indent += "  "
-        print "%sand" % (indent)
+        print("%sand" % (indent))
         for eff in self.effects:
             eff.dump(indent + "  ")
     def _dump(self):
@@ -238,14 +239,14 @@ class ConditionalEffect(TmpEffect):
         assert len(self.effects) == 1
     def dump(self, indent="  "):
         if self.time:
-            print "%sat %s:" %(indent,self.time)
+            print("%sat %s:" %(indent,self.time))
             indent += "  "
-        print "%sif" % (indent)
+        print("%sif" % (indent))
         if isinstance(self.condition,list):
             conditions.dump_temporal_condition(self.condition,indent + "  ")
         else:
             self.condition.dump(indent + "  ")
-        print "%sthen" % (indent)
+        print("%sthen" % (indent))
         self.effects[0].dump(indent + "  ")
     def normalize(self):
         normalized = self.effects[0].normalize()
@@ -278,16 +279,16 @@ class UniversalEffect(TmpEffect):
         assert len(self.effects) == 1
     def dump(self, indent="  "):
         if self.time:
-            print "%sat %s:" %(indent,self.time)
+            print("%sat %s:" %(indent,self.time))
             indent += "  "
-        print "%sforall %s" % (indent, ", ".join(map(str, self.parameters)))
+        print("%sforall %s" % (indent, ", ".join(map(str, self.parameters))))
         self.effects[0].dump(indent + "  ")
     def normalize(self):
         effect = self.effects[0].normalize()
         if effect.__class__.__name__ == "TmpEffect":
-            return TmpEffect([UniversalEffect(self.parameters,eff,eff.time) 
+            return TmpEffect([UniversalEffect(self.parameters,eff,eff.time)
                                   for eff in effect.effects])
-        return UniversalEffect(self.parameters,effect,effect.time) 
+        return UniversalEffect(self.parameters,effect,effect.time)
 
 class ConjunctiveEffect(TmpEffect):
 # effects are Literals and FunctionAssignments
@@ -346,25 +347,25 @@ class ObjectFunctionAssignment(object):
         self.head = head    # term
         self.value = value  # term
     def dump(self, indent="  "):
-        print "%sassign" % (indent)
+        print("%sassign" % (indent))
         self.head.dump(indent + "  ")
         self.value.dump(indent + "  ")
     def rename_variables(self, renamings):
         return self.__class__(self.head.rename_variables(renamings),
                               self.value.rename_variables(renamings))
-    def normalize(self,time,results): 
+    def normalize(self,time,results):
         used_variables = list(self.head.free_variables() | self.value.free_variables())
         typed1, conjunction_parts1, term1 = self.head.compile_objectfunctions_aux(used_variables)
         typed2, conjunction_parts2, term2 = self.value.compile_objectfunctions_aux(used_variables)
         assert isinstance(term1,conditions.Variable)
-       
+
         add_params = set([typed for typed in typed1 if not typed.name==term1.name] + typed2)
         del_params = set(typed1 + typed2)
-        
+
         add_conjunction_parts = conjunction_parts1[1:] + conjunction_parts2
         del_conjunction_parts = conjunction_parts1 + conjunction_parts2
         del_conjunction_parts = conjunction_parts1[1:] + conjunction_parts2
-        # conjunctive_parts1[0] is left out because we do not need the condition 
+        # conjunctive_parts1[0] is left out because we do not need the condition
         # that the atom in the del effect hast been true before
 
         # These conjunction parts are sufficient under the add-after-delete semantics.
@@ -402,7 +403,7 @@ class ObjectFunctionAssignment(object):
         # value "undefined" must be treated specially because it has not the type
         # required in del_params
         if term2.name != "undefined":
-            del_undef_params = set([typed for typed in del_params 
+            del_undef_params = set([typed for typed in del_params
                                             if not typed.name==del_param.name])
             atom_parts = list(conjunction_parts1[0].args)
             atom_parts[-1] = conditions.ObjectTerm("undefined")
@@ -420,5 +421,3 @@ class ObjectFunctionAssignment(object):
             if len(del_undef_params)>0:
                 del_undef_effect = UniversalEffect(del_undef_params,del_undef_effect,time)
             results.append(del_undef_effect)
-
-

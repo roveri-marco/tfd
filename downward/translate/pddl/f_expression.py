@@ -1,5 +1,8 @@
 import string
-import conditions
+from . import conditions
+import locale
+from locale import atof
+locale.setlocale(locale.LC_ALL, 'C')
 
 def isFloat(astring):
     try:
@@ -34,7 +37,7 @@ def parse_expression(exp, durative=False):
                 assert len(args) == 2
                 return Difference(args)
     elif isFloat(exp):
-        return NumericConstant(string.atof(exp))
+        return NumericConstant(atof(exp))
     elif exp == "?duration":
         return DurationVariable()
     else:
@@ -55,7 +58,7 @@ def parse_assignment(alist, durative=False):
         return Increase(head, exp)
     elif op == "decrease":
         return Decrease(head, exp)
-    
+
 
 class FunctionalExpression(object):
     def __init__(self,parts):
@@ -71,14 +74,14 @@ class FunctionalExpression(object):
             result |= part.free_variables()
         return result
     def dump(self, indent="  "):
-        print "%s%s" % (indent, self._dump())
+        print("%s%s" % (indent, self._dump()))
         for part in self.parts:
             part.dump(indent + "  ")
     def _dump(self):
         return self.__class__.__name__
     def _postorder_visit(self, method_name, *args):
         part_results = [part._postorder_visit(method_name, *args)
-                        for part in self.parts] 
+                        for part in self.parts]
         method = getattr(self, method_name, self._propagate)
         return method(part_results, *args)
     def _propagate(self, parts, *args):
@@ -99,13 +102,14 @@ class FunctionalExpression(object):
             conjunction_parts += parts
             new_parts.append(new_part)
         return (typed_vars,conjunction_parts,self.__class__(new_parts))
-    def  instantiate(self, var_mapping, fluent_functions, 
+    def  instantiate(self, var_mapping, fluent_functions,
                         init_function_vals, task, new_axioms=[]):
-        print self.__class__.__name__
+        print(self.__class__.__name__)
         raise ValueError("Cannot instantiate condition: not normalized")
-        
+
 
 class ArithmeticExpression(FunctionalExpression):
+    __hash__ = FunctionalExpression.__hash__
     def __eq__(self,other):
         return (self.hash == other.hash and
                 self.__class__ == other.__class__ and
@@ -182,6 +186,7 @@ class Product(ArithmeticExpression):
         return Product(result_parts)
 
 class NumericConstant(FunctionalExpression):
+    __hash__ = FunctionalExpression.__hash__
     parts = ()
     def __init__(self, value):
         self.value = value
@@ -194,7 +199,7 @@ class NumericConstant(FunctionalExpression):
         return self.value
     def rename_variables(self, renamings={}):
         return self
-    def  instantiate(self, var_mapping, fluent_functions, 
+    def  instantiate(self, var_mapping, fluent_functions,
                         init_function_vals, task, new_axioms=[]):
         return self
     def change_parts(self, parts):
@@ -205,6 +210,7 @@ class NumericConstant(FunctionalExpression):
         return self
 
 class PrimitiveNumericExpression(FunctionalExpression):
+    __hash__ = FunctionalExpression.__hash__
     parts = ()
     def __init__(self, symbol, args):
         self.symbol = symbol
@@ -215,10 +221,10 @@ class PrimitiveNumericExpression(FunctionalExpression):
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
                 self.hash == other.hash and
-                self.symbol == other.symbol and 
-                self.args == other.args) 
+                self.symbol == other.symbol and
+                self.args == other.args)
     def dump(self, indent="  "):
-        print "%s%s" % (indent, self._dump())
+        print("%s%s" % (indent, self._dump()))
         for arg in self.args:
             arg.dump(indent + "  ")
     def _dump(self):
@@ -243,7 +249,7 @@ class PrimitiveNumericExpression(FunctionalExpression):
             conjunction_parts += parts
             new_args.append(new_term)
         return (typed_vars,conjunction_parts,self.__class__(self.symbol,new_args))
-    def  instantiate(self, var_mapping, fluent_functions, 
+    def  instantiate(self, var_mapping, fluent_functions,
                         init_function_vals, task, new_axioms=[]):
         args = [var_mapping.get(conditions.Variable(arg.name),arg) for arg in self.args]
         pne = PrimitiveNumericExpression(self.symbol, args)
@@ -265,19 +271,20 @@ class PrimitiveNumericExpression(FunctionalExpression):
         return self
 
 class FunctionAssignment(object):
+    __hash__ = object.__hash__
     def __init__(self, fluent, expression):
         self.fluent = fluent
         self.expression = expression
         self.hash = hash((self.__class__.__name__, self.fluent, self.expression))
     def __str__(self):
-        return "%s %s %s" % (self.__class__.__name__, self.fluent, self.expression) 
+        return "%s %s %s" % (self.__class__.__name__, self.fluent, self.expression)
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
                 self.hash == other.hash and
                 self.fluent == other.fluent and
                 self.expression == other.expression)
     def dump(self, indent="  "):
-        print "%s%s" % (indent, self._dump())
+        print("%s%s" % (indent, self._dump()))
         self.fluent.dump(indent + "  ")
         self.expression.dump(indent + "  ")
     def _dump(self):
@@ -291,16 +298,16 @@ class FunctionAssignment(object):
                         init_function_vals, fluent_functions, task, new_axioms, result):
         if not isinstance(self.expression,PrimitiveNumericExpression):
             raise ValueError("Cannot instantiate assignment: not normalized")
-        fluent = self.fluent.instantiate(var_mapping, fluent_functions, 
+        fluent = self.fluent.instantiate(var_mapping, fluent_functions,
                                          init_function_vals, task, new_axioms)
-        expression = self.expression.instantiate(var_mapping, fluent_functions, 
+        expression = self.expression.instantiate(var_mapping, fluent_functions,
                                          init_function_vals, task, new_axioms)
         result.append(self.__class__(fluent,expression))
 
 class Assign(FunctionAssignment):
     symbol = "="
     def __str__(self):
-        return "%s := %s" % (self.fluent, self.expression) 
+        return "%s := %s" % (self.fluent, self.expression)
 
 class ScaleUp(FunctionAssignment):
     symbol = "*"
@@ -341,4 +348,3 @@ class DurationVariable(FunctionalExpression):
             duration_function = PrimitiveNumericExpression(name, params)
             pnes.append(duration_function)
             return duration_function
-
