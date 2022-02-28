@@ -24,8 +24,8 @@ class TimedAction(object):
         return self.__class__(self.timestamp, self.name, self.duration)
 
     def dump(self, out=None):
-        print >> out, "%.10f: (%s) [%.10f]" % (
-            self.timestamp, self.name, self.duration)
+        print("%.10f: (%s) [%.10f]" % (
+            self.timestamp, self.name, self.duration), file=out)
 
     @classmethod
     def parse(cls, line, default_timestamp):
@@ -160,7 +160,7 @@ def epsilonize(infile, outfile):
     properties["eps_val_param"] = plan.required_separation() / 2
 
     for item in sorted(properties.items()):
-        print >> outfile, "; %s: %.10f" % item
+        print("; %s: %.10f" % item, file=outfile)
     plan.dump(outfile)
 
     if orig_makespan < adjusted_makespan:
