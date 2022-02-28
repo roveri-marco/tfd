@@ -1,6 +1,6 @@
-import conditions
-import predicates
-import f_expression
+from . import conditions
+from . import predicates
+from . import f_expression
 
 class Axiom(object):
   def __init__(self, name, parameters, condition):
@@ -16,12 +16,12 @@ class Axiom(object):
     return Axiom(predicate.name, predicate.arguments, condition)
   parse = staticmethod(parse)
   def dump(self):
-    print "Axiom %s(%s)" % (self.name, ", ".join(map(str, self.parameters)))
+    print("Axiom %s(%s)" % (self.name, ", ".join(map(str, self.parameters))))
     self.condition.dump()
   def uniquify_variables(self):
     self.type_map = dict([(par.name, par.type) for par in self.parameters])
     self.condition = self.condition.uniquify_variables(self.type_map)
-  def instantiate(self, var_mapping, init_facts, fluent_facts, 
+  def instantiate(self, var_mapping, init_facts, fluent_facts,
                   fluent_functions, init_function_vals, task, new_constant_axioms):
     # The comments for Action.instantiate apply accordingly.
     arg_list = [var_mapping[conditions.Variable(par.name)].name for par in self.parameters]
@@ -34,7 +34,7 @@ class Axiom(object):
     except conditions.Impossible:
       return None
 
-    effect_args = [var_mapping.get(conditions.Variable(arg.name), 
+    effect_args = [var_mapping.get(conditions.Variable(arg.name),
                                    conditions.Variable(arg.name)) for arg in self.parameters]
     effect = conditions.Atom(self.name, effect_args)
     return PropositionalAxiom(name, condition, effect)
@@ -48,11 +48,11 @@ class PropositionalAxiom:
     return PropositionalAxiom(self.name, list(self.condition), self.effect)
   def dump(self):
     if self.effect.negated:
-      print "not",
-    print self.name
+      print("not", end=' ')
+    print(self.name)
     for fact in self.condition:
-      print "PRE: %s" % fact
-    print "EFF: %s" % self.effect
+      print("PRE: %s" % fact)
+    print("EFF: %s" % self.effect)
 
 class NumericAxiom(object):
   def __init__(self, name, parameters, op, parts):
@@ -70,7 +70,7 @@ class NumericAxiom(object):
     if self.op:
         op = self.op + " "
     body = "%s" % " ".join(map(str, self.parts))
-    print "%s%s -: %s%s" % (indent,head,op,body)
+    print("%s%s -: %s%s" % (indent,head,op,body))
   def instantiate(self, var_mapping, fluent_functions, init_function_vals, task, new_constant_axioms):
     arg_list = [var_mapping[conditions.Variable(par.name)] for par in self.parameters]
     name = "(%s %s)" % (self.name, " ".join([arg.name for arg in arg_list]))
@@ -79,7 +79,7 @@ class NumericAxiom(object):
         if isinstance(part,f_expression.NumericConstant):
             parts.append(part)
         else:
-            parts.append(part.instantiate(var_mapping, fluent_functions, 
+            parts.append(part.instantiate(var_mapping, fluent_functions,
                          init_function_vals, task, new_constant_axioms))
     effect = f_expression.PrimitiveNumericExpression(self.name, arg_list)
     return PropositionalNumericAxiom(name, self.op, parts, effect)
@@ -88,19 +88,28 @@ class PropositionalNumericAxiom(object):
   def __init__(self, name, op, parts, effect):
     self.name = name
     self.op = op
-    self.parts = parts # contains PropositionalNumericAxioms, (instantiated) 
+    self.parts = parts # contains PropositionalNumericAxioms, (instantiated)
                        # PrimitiveNumericExpressions or a NumericConstant
     self.effect = effect
   def __str__(self):
     return self.name
-  def __cmp__(self, other):
-    return cmp((self.__class__, self.name), (other.__class__, other.name))
+  def __lt__(selfm, other):
+    return (self.__class__, self.name) < (other.__class__, other.name)
+  def __le__(self, other):
+    return (self.__class__, self.name) <= (other.__class__, other.name)
+  def __gt__(self, other):
+    return (self.__class__, self.name) > (other.__class__, other.name)
+  def __ge__(self, other):
+    return (self.__class__, self.name) >= (other.__class__, other.name)
+  def __eq__(self, other):
+    return (self.__class__, self.name) == (other.__class__, other.name)
+  #def __cmp__(self, other):
+  #  return cmp((self.__class__, self.name), (other.__class__, other.name))
   def __hash__(self):
     return hash((self.__class__,self.name))
   def dump(self):
-    print self.name
-    print "OP: %s" % self.op
+    print(self.name)
+    print("OP: %s" % self.op)
     for part in self.parts:
-        print "PART: %s" % part
-    print "EFF: %s" % self.effect
-
+        print("PART: %s" % part)
+    print("EFF: %s" % self.effect)

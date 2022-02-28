@@ -1,2 +1,5 @@
 *.pyc
 .obj
+.o
+search/search
+preprocess/preprocess
