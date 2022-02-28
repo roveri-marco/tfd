@@ -837,7 +837,7 @@ def build_mutex_key(strips_to_sas, groups):
     return group_keys
 
 def write_translation_key(strips_to_sas):
-    var_file = file("variables.groups", "w")
+    var_file = open("variables.groups", "w")
     vars = dict()
     for exp,[(var, val)] in strips_to_sas.items():
         vars.setdefault(var, []).append((val, exp))
@@ -850,7 +850,7 @@ def write_translation_key(strips_to_sas):
             print("   %d: <none of those>" % (val + 1), file=var_file)
 
 def write_mutex_key(mutex_key):
-    invariants_file = file("all.groups", "w")
+    invariants_file = open("all.groups", "w")
     print("begin_groups", file=invariants_file)
     print(len(mutex_key), file=invariants_file)
     for group in mutex_key:
@@ -904,7 +904,7 @@ if __name__ == "__main__":
 
     sas_task = pddl_to_sas(task)
     print("Writing output...")
-    sas_task.output(file("output.sas", "w"))
+    sas_task.output(open("output.sas", "w"))
     out_file = open("output.sas","a")
     out_file.write("%d\n" % containsQuantifiedConditions)
     out_file.close()
