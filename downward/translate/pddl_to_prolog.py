@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: latin-1 -*-
 
 import itertools
@@ -28,7 +28,7 @@ class PrologProgram:
   def normalize(self):
     # Normalized prolog programs have the following properties:
     # 1. Each variable that occurs in the effect of a rule also occurs in its
-    #    condition. 
+    #    condition.
     # 2. The variables that appear in each effect or condition are distinct.
     # 3. There are no rules with empty condition.
     self.remove_free_effect_variables()
@@ -93,7 +93,7 @@ class PrologProgram:
       print("Trivial rules: Converted to facts.")
       for rule_no in must_delete_rules[::-1]:
         del self.rules[rule_no]
-    
+
 def get_variables(symbolic_atoms):
   variables = set()
   for sym_atom in symbolic_atoms:
@@ -190,6 +190,6 @@ def test_normalization():
 if __name__ == "__main__":
   # test_normalization()
 
-  task = pddl.open()
+  task = pddl.pddl_open()
   prog = translate(task)
   prog.dump()

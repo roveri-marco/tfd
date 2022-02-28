@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: latin-1 -*-
 
 import sys
@@ -42,7 +42,7 @@ class BuildRule:
     return effect_args
   def __str__(self):
     return "%s :- %s" % (self.effect, ", ".join(map(str, self.conditions)))
-    
+
 class JoinRule(BuildRule):
   def __init__(self, effect, conditions):
     self.effect = effect
@@ -154,7 +154,7 @@ class Unifier:
                           if not isinstance(arg, int) and not isinstance(arg,pddl.Variable)]
     newroot = root._insert(constant_arguments, (rule, cond_index))
     self.predicate_to_rule_generator[condition.predicate] = newroot
-  def dump(self): 
+  def dump(self):
     predicates = list(self.predicate_to_rule_generator.keys())
     predicates.sort()
     print("Unifier:")
@@ -162,7 +162,7 @@ class Unifier:
       print("  %s:" % pred)
       rule_gen = self.predicate_to_rule_generator[pred]
       rule_gen.dump(())
-    
+
 class LeafGenerator:
   index = sys.maxsize
   def __init__(self):
@@ -270,7 +270,7 @@ def compute_model(prog):
 if __name__ == "__main__":
   import pddl_to_prolog
   print("Parsing...")
-  task = pddl.open()
+  task = pddl.pddl_open()
   print("Writing rules...")
   prog = pddl_to_prolog.translate(task)
   print("Computing model...")

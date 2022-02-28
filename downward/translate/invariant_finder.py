@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: latin-1 -*-
 
 
@@ -154,7 +154,7 @@ def get_groups(task, safe=True, reachable_action_params=None):
 if __name__ == "__main__":
     import pddl
     print("Parsing...")
-    task = pddl.open()
+    task = pddl.pddl_open()
     print("Finding invariants...")
     for invariant in find_invariants(task):
         print(invariant)

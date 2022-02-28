@@ -570,8 +570,8 @@ class Variable(Term):
         return self.name > other.name
     def __ge__(self, other):
         return self.name >= other.name
-    def __cmp__(self,other):
-        return cmp(self.name,other.name)
+    #def __cmp__(self,other):
+    #    return cmp(self.name,other.name)
     def __hash__(self):
         return self.hash
     def __str__(self):
@@ -591,8 +591,16 @@ class ObjectTerm(Term):
     def __eq__(self, other):
         return (self.__class__ is other.__class__ and
                 self.name == other.name)
-    def __cmp__(self,other):
-        return cmp(self.name,other.name)
+    def __lt__(self, other):
+        return self.name < other.name
+    def __le__(self, other):
+        return self.name <= other.name
+    def __gt__(self, other):
+        return self.name > other.name
+    def __ge__(self, other):
+        return self.name >= other.name
+    #def __cmp__(self, other):
+    #    return cmp(self.name,other.name)
     def __str__(self):
         return "<%s>" % self.name
     def __hash__(self):

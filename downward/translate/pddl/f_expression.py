@@ -68,6 +68,14 @@ class FunctionalExpression(object):
         return self.hash
     def __ne__(self, other):
         return not self == other
+    def __lt__(self, other):
+        return self.parts < other.parts
+    def __le__(self, other):
+        return self.parts <= other.parts
+    def __gt__(self, other):
+        return self.parts > other.parts
+    def __ge__(self, other):
+        return self.parts >= other.parts
     def free_variables(self):
         result = set()
         for part in self.parts:
@@ -103,7 +111,7 @@ class FunctionalExpression(object):
             new_parts.append(new_part)
         return (typed_vars,conjunction_parts,self.__class__(new_parts))
     def  instantiate(self, var_mapping, fluent_functions,
-                        init_function_vals, task, new_axioms=[]):
+                     init_function_vals, task, new_axioms=[]):
         print(self.__class__.__name__)
         raise ValueError("Cannot instantiate condition: not normalized")
 
@@ -193,6 +201,14 @@ class NumericConstant(FunctionalExpression):
         self.hash = hash((self.__class__, self.value))
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and self.value == other.value)
+    def __lt__(self, other):
+        return self.value < other.value
+    def __le__(self, other):
+        return self.value <= other.value
+    def __gt__(self, other):
+        return self.value > other.value
+    def __ge__(self, other):
+        return self.value >= other.value
     def __str__(self):
         return str(self.value)
     def _dump(self):
@@ -223,6 +239,14 @@ class PrimitiveNumericExpression(FunctionalExpression):
                 self.hash == other.hash and
                 self.symbol == other.symbol and
                 self.args == other.args)
+    def __lt__(self, other):
+        return (self.symbol, self.args) < (other.symbol, other.args)
+    def __le__(self, other):
+        return (self.symbols, self.args) < (other.symbols, other.args)
+    def __gt__(self, other):
+        return (self.symbol, self.args) > (other.symbol, other.args)
+    def __ge__(self, other):
+        return (self.symbols, self.args) >= (other.symbols, other.args)
     def dump(self, indent="  "):
         print("%s%s" % (indent, self._dump()))
         for arg in self.args:

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: latin-1 -*-
 
 from collections import defaultdict
@@ -138,7 +138,7 @@ def explore(task):
 if __name__ == "__main__":
   import pddl
 
-  task = pddl.open()
+  task = pddl.pddl_open()
   (relaxed_reachable, atoms, num_fluents, actions,durative_actions,
         axioms, num_axioms,
         reachable_action_params) = explore(task)
